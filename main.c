@@ -1,20 +1,57 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
-#include <hardware/gpio.h>
-#include <pico/binary_info.h>
+#include <hardware/spi.h>
+
+#include "ili9341.h"
+
+#define PIN_SDO 16
+#define PIN_LED 21
+#define PIN_SCK 14
+#define PIN_SDI 15
+#define PIN_DC 5
+#define PIN_RESET 6
+#define PIN_CS 17
+//#define PIN_GND
+//#define PIN_VCC
+
 int main(void) {
-
-    const uint LED_PIN = 25;
-    bi_decl(bi_program_description("Test binary"));
-    bi_decl(bi_1pin_with_name(LED_PIN, "On-Board LED"));
-
     stdio_init_all();
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SDI, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SDO, GPIO_FUNC_SPI);
+
+    gpio_init(PIN_CS);
+    gpio_set_dir(PIN_CS, GPIO_OUT);
+    gpio_put(PIN_CS, 1);
+
+    gpio_init(PIN_DC);
+    gpio_set_dir(PIN_DC, GPIO_OUT);
+    gpio_put(PIN_DC, 1);
+
+    gpio_init(PIN_LED);
+    gpio_set_dir(PIN_LED, GPIO_OUT);
+    gpio_put(PIN_LED, 1);
+
+    spi_init(spi1,10000000);
+    display_config disp = {spi1,PIN_SDO,PIN_LED,PIN_SCK,PIN_SDI,PIN_DC};
+    uint16_t pixels[4] =
+    {
+        0xF800,
+        0xF800,
+        0xF800,
+        0xF800
+    };
+    Draw(
+        &disp,
+        50,     // x1
+        51,     // x2
+        50,     // y1
+        51,     // y2
+        pixels,
+        4       // number of pixels
+    );
     while (1) {
-        gpio_put(LED_PIN, 0);
         sleep_ms(250);
-        gpio_put(LED_PIN, 1);
         puts("Hello World");
         sleep_ms(1000);
     }
