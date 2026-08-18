@@ -41,15 +41,7 @@ int main(void) {
         0xF800,
         0xF800
     };
-    Draw(
-        &disp,
-        50,     // x1
-        51,     // x2
-        50,     // y1
-        51,     // y2
-        pixels,
-        4       // number of pixels
-    );
+    Draw(&disp,50,51,50,51,pixels,4);
     while (1) {
         sleep_ms(250);
         puts("Hello World");

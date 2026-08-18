@@ -33,4 +33,5 @@ static inline void Set_CS(display_config* disp, bool state);
 void inline Send_CMD(display_config* disp, uint8_t cmd);
 void inline Send_DATA(display_config* disp, uint8_t* data, uint8_t len);
 void inline Draw(display_config* disp,  uint16_t x1, uint16_t x2, uint16_t y1,uint16_t y2, uint16_t* pixel_dat,uint8_t pix_cnt);
+void inline Send_Param(display_config* disp, uint8_t* param, uint8_t len);
 #endif //BASIC_PICO_PROJECT_ILI9341_H
