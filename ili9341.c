@@ -69,3 +69,41 @@ uint8_t Read_MADCTL(display_config* disp)
 
     return response;
 }
+void Init_DISP(display_config *disp) {
+
+    gpio_set_function(disp->PIN_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(disp->PIN_SDI, GPIO_FUNC_SPI);
+    gpio_set_function(disp->PIN_SDO, GPIO_FUNC_SPI);
+
+    gpio_init(disp->PIN_CS);
+    gpio_set_dir(disp->PIN_CS, GPIO_OUT);
+    gpio_put(disp->PIN_CS, 1);
+
+    gpio_init(disp->PIN_DC);
+    gpio_set_dir(disp->PIN_DC, GPIO_OUT);
+    gpio_put(disp->PIN_DC, 1);
+
+    gpio_init(disp->PIN_LED);
+    gpio_set_dir(disp->PIN_LED, GPIO_OUT);
+    gpio_put(disp->PIN_LED, 1);
+
+    gpio_init(disp->PIN_RESET);
+    gpio_set_dir(disp->PIN_RESET, GPIO_OUT);
+
+    gpio_put(disp->PIN_RESET, 0);
+    sleep_ms(10);
+    gpio_put(disp->PIN_RESET, 1);
+    sleep_ms(120);
+
+    spi_init(spi1,40000000);
+    sleep_ms(120);
+    Set_CS(disp, 0);
+    Send_CMD(disp,SLP_OUT);
+    Send_CMD(disp,PIX_FMT);
+    Send_Param(disp,0x55);
+    Send_CMD(disp,MADCTL);
+    Send_Param(disp,0x48);
+    Send_CMD(disp,DISP_ON);
+    Set_CS(disp, 1);
+    sleep_ms(2000);
+}

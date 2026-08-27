@@ -28,10 +28,12 @@ typedef struct {
     int PIN_RESET;
     int PIN_CS;
 }   display_config;
+
 uint8_t Read_MADCTL(display_config* disp);
 void Set_CS(display_config* disp, bool state);
 void Send_CMD(display_config* disp, uint8_t cmd);
 void Send_Param16(display_config* disp, uint16_t data);
 void Draw(display_config* disp,  uint16_t x1, uint16_t x2, uint16_t y1,uint16_t y2, uint16_t* pixel_dat);
 void Send_Param(display_config* disp, uint8_t param);
+void Init_DISP(display_config* disp);
 #endif //BASIC_PICO_PROJECT_ILI9341_H
