@@ -9,7 +9,14 @@ typedef uint16_t hex;
 typedef uint8_t byte;
 
 typedef struct {
-    hex halfReg[4];
+    byte A;
+    byte B;
+    byte C;
+    byte D;
+    byte E;
+    byte H;
+    byte L;
+    byte F;
     hex *sp;
     hex pc;
     byte ir;
