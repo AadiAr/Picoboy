@@ -67,6 +67,7 @@ void LDH_n_A() {
     hex addr = 0xFF00 | n;
     GB.memory[addr] = GB.A;
 }
+//hl pointer commands seem to have an issue as the original parameter HL which was made to be h << 8 | L is but h and l are not being updated after
 void LD_A_HL_DEC(hex *HL) {
     GB.A = GB.memory[*HL];
     (*HL)--;
@@ -89,6 +90,16 @@ void LD_rr_nn(byte *r1, byte *r2) {
     byte n2 = Fetch();
     *r1 = n2;
     *r2 = n1;
+}
+//check stack functioning for the following
+void LD_nn_SP() {
+    byte n1 = Fetch();
+    byte n2 = Fetch();
+    hex nn = n2 << 8 | n1;
+    GB.memory[nn] = GB.sp;
+}
+void LD_SP_HL(hex HL) {
+    GB.sp = HL;
 }
 
 void Execute() {

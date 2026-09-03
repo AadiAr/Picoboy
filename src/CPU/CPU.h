@@ -17,7 +17,7 @@ typedef struct {
     byte H;
     byte L;
     byte F;
-    hex *sp;
+    hex sp;
     hex pc;
     byte ir;
     byte ie;
