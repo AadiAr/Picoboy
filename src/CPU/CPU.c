@@ -2,13 +2,32 @@
 // Created by Aadi on 30/8/2026.
 //
 #include "cpu.h"
-
+#define To_HEX(p,n) (p << 8 | n)
+#define Set_Bit_N(p, n, st) ((p & ~(1 << n)) | ((st & 1) << n))
 cpu GB;
 
 byte Fetch() {
     byte opCode = GB.memory[GB.pc];
     GB.pc++;
     return opCode;
+}
+void inc_rr(byte* r1, byte* r2) {
+    //r1 msb r2 lsb
+    if (*r2 == 0xFF) {
+        (*r1)++;
+        *r2 = 0x00;
+    }
+    else{(*r2)++;}
+}
+void dec_rr(byte* r1, byte* r2) {
+    if (*r2 == 0x00) {
+        (*r1)--;
+        *r2 = 0xFF;
+    }
+    else{(*r2)--;}
+}
+hex get_rr(byte r1, byte r2) {
+    return r1 << 8 | r2;
 }
 //8 bit load instr.
 void LD_r_r1(byte *r, byte r1) {
@@ -40,13 +59,13 @@ void LD_A_NN() {
     //n1 = lsb, n2 = msb
     byte n1 = Fetch();
     byte n2 = Fetch();
-    hex nn = n2 << 8 | n1;
+    hex nn = To_HEX(n2,n1);
     GB.A = GB.memory[nn];
 }
 void LD_NN_A() {
     byte n1 = Fetch();
     byte n2 = Fetch();
-    hex nn = n2 << 8 | n1;
+    hex nn = To_HEX(n2,n1);
     GB.memory[nn] = GB.A;
 }
 void LDH_A_C() {
@@ -68,21 +87,21 @@ void LDH_n_A() {
     GB.memory[addr] = GB.A;
 }
 //hl pointer commands seem to have an issue as the original parameter HL which was made to be h << 8 | L is but h and l are not being updated after
-void LD_A_HL_DEC(hex *HL) {
-    GB.A = GB.memory[*HL];
-    (*HL)--;
+void LD_A_HL_DEC(byte* H, byte* L) {
+    GB.A = GB.memory[To_HEX(*H,*L)];
+    dec_rr(H,L);
 }
-void LD_HL_A_DEC(hex *HL) {
-    GB.memory[*HL] = GB.A;
-    (*HL)--;
+void LD_HL_A_DEC(byte* H, byte* L) {
+    GB.memory[To_HEX(*H,*L)] = GB.A;
+    dec_rr(H,L);
 }
-void LD_A_HL_INC(hex *HL) {
-    GB.A = GB.memory[*HL];
-    (*HL)++;
+void LD_A_HL_INC(byte *H, byte *L) {
+    GB.A = GB.memory[To_HEX(*H,*L)];
+    inc_rr(H,L);
 }
-void LD_HL_A_INC(hex *HL) {
-    GB.memory[*HL] = GB.A;
-    (*HL)++;
+void LD_HL_A_INC(byte* H, byte* L) {
+    GB.memory[To_HEX(*H,*L)] = GB.A;
+    inc_rr(H,L);
 }
 //16 bit load instr.
 void LD_rr_nn(byte *r1, byte *r2) {
@@ -101,7 +120,26 @@ void LD_nn_SP() {
 void LD_SP_HL(hex HL) {
     GB.sp = HL;
 }
-
+//8 Bit arithematic operations
+void ADD_r(byte r) {
+    byte result = GB.A + r;
+    if (result == 0) {
+        GB.F = Set_Bit_N(GB.F,7,1);
+    }
+    GB.F = Set_Bit_N(GB.F,6,0);
+    if ((GB.A & 0x0F) + (r & 0x0F) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
 void Execute() {
     byte opcode = Fetch();
     hex HL = GB.H << 8 | GB.L;

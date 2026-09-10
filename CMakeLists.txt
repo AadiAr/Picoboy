@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.25.2)
 set(PICO_PLATFORM rp2350 CACHE STRING "Pico platform")
 set(PICO_BOARD pico2 CACHE STRING "Pico board")
 
-include("C:/Users/Gunjan/Documents/pico-sdk/external/pico_sdk_import.cmake")
+include("C:/Users/aadia/Documents/pico-sdk/external/pico_sdk_import.cmake")
 
 project(GB_PICO C CXX ASM)
 set(CMAKE_C_STANDARD 11)

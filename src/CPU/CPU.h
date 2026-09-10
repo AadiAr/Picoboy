@@ -5,6 +5,8 @@
 #ifndef GB_PICO_CPU_H
 #define GB_PICO_CPU_H
 #include <stdio.h>
+#include <inttypes.h>
+
 typedef uint16_t hex;
 typedef uint8_t byte;
 
@@ -23,6 +25,5 @@ typedef struct {
     byte ie;
     byte memory[0xFFFF];
 }cpu;
-
 
 #endif //GB_PICO_CPU_H

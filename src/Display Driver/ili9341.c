@@ -34,19 +34,14 @@ void Draw(display_config* disp,  uint16_t x1, uint16_t x2, uint16_t y1,uint16_t 
     Send_CMD(disp,COL_ADD_SET);
     Send_Param16(disp,x1);
     Send_Param16(disp,x2);
-    Set_CS(disp,1);
-    Set_CS(disp,0);
     Send_CMD(disp,PA_ADD_SET);
     Send_Param16(disp,y1);
     Send_Param16(disp,y2);
-    Set_CS(disp,1);
-    Set_CS(disp,0);
     Send_CMD(disp,RAM_WR);
     int pix_cnt = (x2-x1 + 1) * (y2-y1 + 1);
     for (int i = 0; i < pix_cnt; i++) {
         Send_Param16(disp,pixel_dat[i]);
     }
-    //Send_Param(disp,(uint8_t*)pixel_dat,pix_cnt*2);
     Set_CS(disp,1);
 }
 uint8_t Read_MADCTL(display_config* disp)
