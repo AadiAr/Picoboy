@@ -49,19 +49,12 @@ uint8_t Read_MADCTL(display_config* disp)
     uint8_t cmd = 0x0B;
     uint8_t dummy = 0x00;
     uint8_t response = 0x00;
-
     Set_CS(disp, 0);
-
-    // Command phase
     gpio_put(disp->PIN_DC, 0);
     spi_write_blocking(disp->spi, &cmd, 1);
-
-    // Data/read phase
     gpio_put(disp->PIN_DC, 1);
     spi_write_read_blocking(disp->spi, &dummy, &response, 1);
-
     Set_CS(disp, 1);
-
     return response;
 }
 void Init_DISP(display_config *disp) {

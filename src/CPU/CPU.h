@@ -24,6 +24,8 @@ typedef struct {
     byte ir;
     byte ie;
     byte memory[0xFFFF];
+    int tc;
+    int mc;
 }cpu;
 
 #endif //GB_PICO_CPU_H

@@ -32,5 +32,4 @@ int main(void) {
         pixels[i] = 0x001F;
     }
     Draw(&disp, 0, 239, 0, 319, pixels);
-
 }

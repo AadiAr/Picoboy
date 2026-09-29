@@ -65,7 +65,7 @@
 
 
 
-#define MHz                 1000000L
+#define MHz                 4000000L
 #define PIX_WIDTH           240
 #define PIX_HEIGHT          320
 #define PIX_BIT_COUNT        (PIX_WIDTH * PIX_HEIGHT)

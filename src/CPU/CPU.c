@@ -2,13 +2,25 @@
 // Created by Aadi on 30/8/2026.
 //
 #include "cpu.h"
-#define To_HEX(p,n) (p << 8 | n)
-#define Set_Bit_N(p, n, st) ((p & ~(1 << n)) | ((st & 1) << n))
-cpu GB;
+#define To_HEX(p,n) ((p) << 8 | (n))
+#define Set_Bit_N(p, n, st) (((p) & ~(1 << (n))) | (((st) & 1) << (n)))
 
+cpu GB;
+void Tick(int n) {
+    GB.tc += n;
+}
+byte Read(hex add) {
+    Tick(4);
+    return GB.memory[add];
+}
+void Write(hex add, byte data) {
+    GB.memory[add] = data;
+    Tick(4);
+}
 byte Fetch() {
     byte opCode = GB.memory[GB.pc];
     GB.pc++;
+    Tick(4);
     return opCode;
 }
 void inc_rr(byte* r1, byte* r2) {
@@ -34,73 +46,73 @@ void LD_r_r1(byte *r, byte r1) {
     *r = r1;
 }
 void LD_r_HL(byte *r, hex HL) {
-    *r = GB.memory[HL];
+    *r = Read(HL);
 }
 void LD_HL_r(hex HL, byte r) {
-    GB.memory[HL] = r;
+    Write(HL,r);
 }
 void LD_HL_n(hex hl) {
     byte n = Fetch();
-    GB.memory[hl] = n;
+    Write(hl,n);
 }
 void LD_A_BC(hex BC) {
-    GB.A = GB.memory[BC];
+    GB.A = Read(BC);
 }
 void LD_A_DE(hex DE) {
-    GB.A = GB.memory[DE];
+    GB.A = Read(DE);
 }
 void LD_BC_A(hex BC) {
-    GB.memory[BC] = GB.A;
+    Write(BC,GB.A);
 }
 void LD_DE_A(hex DE) {
-    GB.memory[DE] = GB.A;
+    Write(DE,GB.A);
 }
 void LD_A_NN() {
     //n1 = lsb, n2 = msb
     byte n1 = Fetch();
     byte n2 = Fetch();
     hex nn = To_HEX(n2,n1);
-    GB.A = GB.memory[nn];
+    GB.A = Read(nn);
 }
 void LD_NN_A() {
     byte n1 = Fetch();
     byte n2 = Fetch();
     hex nn = To_HEX(n2,n1);
-    GB.memory[nn] = GB.A;
+    Write(nn,GB.A);
 }
 void LDH_A_C() {
     hex addr = 0xFF00 | GB.C;
-    GB.A = GB.memory[addr];
+    GB.A = Read(addr);
 }
 void LDH_C_A() {
     hex addr = 0xFF00 | GB.C;
-    GB.memory[addr] = GB.A;
+    Write(addr,GB.A);
 }
 void LDH_A_n() {
     byte n = Fetch();
     hex addr = 0xFF00 | n;
-    GB.A = GB.memory[addr];
+    GB.A = Read(addr);
 }
 void LDH_n_A() {
     byte n = Fetch();
     hex addr = 0xFF00 | n;
-    GB.memory[addr] = GB.A;
+    Write(addr,GB.A);
 }
 //hl pointer commands seem to have an issue as the original parameter HL which was made to be h << 8 | L is but h and l are not being updated after
 void LD_A_HL_DEC(byte* H, byte* L) {
-    GB.A = GB.memory[To_HEX(*H,*L)];
+    GB.A = Read(To_HEX(*H,*L));
     dec_rr(H,L);
 }
 void LD_HL_A_DEC(byte* H, byte* L) {
-    GB.memory[To_HEX(*H,*L)] = GB.A;
+    Write(To_HEX(*H,*L),GB.A);
     dec_rr(H,L);
 }
 void LD_A_HL_INC(byte *H, byte *L) {
-    GB.A = GB.memory[To_HEX(*H,*L)];
+    GB.A = Read(To_HEX(*H,*L));
     inc_rr(H,L);
 }
 void LD_HL_A_INC(byte* H, byte* L) {
-    GB.memory[To_HEX(*H,*L)] = GB.A;
+    Write(To_HEX(*H,*L),GB.A);
     inc_rr(H,L);
 }
 //16 bit load instr.
@@ -115,7 +127,7 @@ void LD_nn_SP() {
     byte n1 = Fetch();
     byte n2 = Fetch();
     hex nn = n2 << 8 | n1;
-    GB.memory[nn] = GB.sp;
+    Write(nn,GB.sp);
 }
 void LD_SP_HL(hex HL) {
     GB.sp = HL;
@@ -139,6 +151,19 @@ void ADD_r(byte r) {
     else {
         GB.F = Set_Bit_N(GB.F,4,0);
     }
+}
+void ADD_HL(byte *H, byte* L,byte *A) {
+    hex hl = *H << 8 | *L;
+    *A += GB.memory[hl];
+    if (*A == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,0);
+
+    
 }
 void Execute() {
     byte opcode = Fetch();
