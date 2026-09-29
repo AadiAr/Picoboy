@@ -18,12 +18,14 @@ typedef struct {
     byte E;
     byte H;
     byte L;
+    //bit 7 = z, 6 = n, 5 = h, 4 = c
     byte F;
     hex sp;
     hex pc;
     byte ir;
     byte ie;
     byte memory[0xFFFF];
+    //T-Cycles and M cycles
     int tc;
     int mc;
 }cpu;

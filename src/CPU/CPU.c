@@ -4,6 +4,7 @@
 #include "cpu.h"
 #define To_HEX(p,n) ((p) << 8 | (n))
 #define Set_Bit_N(p, n, st) (((p) & ~(1 << (n))) | (((st) & 1) << (n)))
+#define Get_Bit_N(p, n) (((p) >> n) & 1)
 
 cpu GB;
 void Tick(int n) {
@@ -135,8 +136,12 @@ void LD_SP_HL(hex HL) {
 //8 Bit arithematic operations
 void ADD_r(byte r) {
     byte result = GB.A + r;
+    GB.A = result;
     if (result == 0) {
         GB.F = Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,7,0);
     }
     GB.F = Set_Bit_N(GB.F,6,0);
     if ((GB.A & 0x0F) + (r & 0x0F) > 0x0F) {
@@ -152,18 +157,774 @@ void ADD_r(byte r) {
         GB.F = Set_Bit_N(GB.F,4,0);
     }
 }
-void ADD_HL(byte *H, byte* L,byte *A) {
+void ADD_HL(byte *H, byte* L) {
     hex hl = *H << 8 | *L;
-    *A += GB.memory[hl];
-    if (*A == 0) {
+    byte result = GB.A + GB.memory[hl];
+    GB.A += GB.memory[hl];
+    if (result == 0) {
         Set_Bit_N(GB.F,7,1);
     }
     else {
         Set_Bit_N(GB.F,7,0);
     }
     Set_Bit_N(GB.F,6,0);
-
-    
+    if ((GB.A & 0x0F) + (GB.memory[hl] & 0x0F) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void ADD_N() {
+    byte n = Fetch();
+    byte result = GB.A + n;
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,0);
+    if ((GB.A & 0x0F) + (n & 0x0F) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void ADC_r(byte r) {
+    byte result = GB.A + r + Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,0);
+    //recheck for correctness later
+    if ((GB.A & 0x0F) + (r & 0x0F) + Get_Bit_N(GB.F,4) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void ADC_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A + n + Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,0);
+    //recheck for correctness later
+    if ((GB.A & 0x0F) + (n & 0x0F) + Get_Bit_N(GB.F,4) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void ADC_n() {
+    byte n = Fetch();
+    byte result = GB.A + n + Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,0);
+    //recheck for correctness later
+    if ((GB.A & 0x0F) + (n & 0x0F) + Get_Bit_N(GB.F,4) > 0x0F) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (result > 0xFF) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SUB_r(byte r) {
+    byte result = GB.A - r;
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (r & 0x0F)) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < r) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SUB_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A - n;
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F)) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SUB_n() {
+    byte n = Fetch();
+    byte result = GB.A - n;
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F)) {
+        GB.F = Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SBC_r(byte r) {
+    byte result = GB.A - r - Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (r & 0x0F) + Get_Bit_N(GB.F,4)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < r + Get_Bit_N(GB.F,4)) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SBC_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A - n - Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F) + Get_Bit_N(GB.F,4)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n + Get_Bit_N(GB.F,4)) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void SBC_n() {
+    byte n = Fetch();
+    byte result = GB.A - n - Get_Bit_N(GB.F,4);
+    GB.A = result;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F) + Get_Bit_N(GB.F,4)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n + Get_Bit_N(GB.F,4)) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void Cmp_r(byte r) {
+    byte result = GB.A - r;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (r & 0x0F)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < r) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void Cmp_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A - n;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void Cmp_n() {
+    byte n = Fetch();
+    byte result = GB.A - n;
+    if (result == 0) {
+        Set_Bit_N(GB.F,7,1);
+    }
+    else {
+        Set_Bit_N(GB.F,7,0);
+    }
+    Set_Bit_N(GB.F,6,1);
+    if ((GB.A & 0x0F) < (n & 0x0F)) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+    if (GB.A < n) {
+        GB.F = Set_Bit_N(GB.F,4,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,4,0);
+    }
+}
+void INC_r(byte *r) {
+    byte result = *r + 1;
+    *r = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    if ((*r & 0x0F) + 1 > 0x0F) {
+        Set_Bit_N(GB.F,5,1);
+    }
+    else {
+        GB.F = Set_Bit_N(GB.F,5,0);
+    }
+}
+void INC_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = n + 1;
+    Write(GB.H << 8 | GB.L, result);
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,1);
+    if ((n & 0x0F) + 1 > 0x0F) Set_Bit_N(GB.F,5,1);
+    else Set_Bit_N(GB.F,5,0);
+}
+void Dec_r(byte *r) {
+    byte result = *r - 1;
+    *r = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,1);
+    if((*r & 0x0F) == 0) Set_Bit_N(GB.F,5,1);
+    else Set_Bit_N(GB.F,5,0);
+}
+void Dec_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = n - 1;
+    Write(GB.H << 8 | GB.L, result);
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,1);
+    if ((n & 0x0F) == 0) Set_Bit_N(GB.F,5,1);
+    else Set_Bit_N(GB.F,5,0);
+}
+void AND_r(byte r) {
+    byte result = GB.A & r;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,1);
+    Set_Bit_N(GB.F,4,0);
+}
+void AND_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A & n;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,1);
+    Set_Bit_N(GB.F,4,0);
+}
+void AND_n() {
+    byte n = Fetch();
+    byte result = GB.A & n;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,1);
+    Set_Bit_N(GB.F,4,0);
+}
+void OR_r(byte r) {
+    byte result = GB.A | r;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void OR_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte result = GB.A | n;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void OR_n() {
+    byte n = Fetch();
+    byte result = GB.A | n;
+    GB.A = result;
+    if (result == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void XOR_r(byte r) {
+    GB.A ^= r;
+    if ((GB.A ^ r)== 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void XOR_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    GB.A ^= n;
+    if ((GB.A ^ n)== 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void XOR_n() {
+    byte n = Fetch();
+    GB.A ^= n;
+    if ((GB.A ^ n)== 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void CCF() {
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,~Get_Bit_N(GB.F,4));
+}
+void SCF() {
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,1);
+}
+void DAA() {
+    //TO-DO
+}
+void CPL() {
+    GB.A = ~GB.A;
+    Set_Bit_N(GB.F,6,1);
+    Set_Bit_N(GB.F,5,1);
+}
+//16 Bit arithmatic instructions
+void INC_rr(byte *r1, byte *r2) {
+    if (*r2 < 0xFF) {
+        (*r2)++;
+    }
+    else {
+        *r2 = 0;
+        (*r1)++;
+    }
+    Tick(4);
+}
+void DEC_rr(byte *r1, byte *r2) {
+    hex rr = *r1 << 8 | *r2;
+    rr--;
+    *r1 = rr >> 8;
+    *r2 = rr & 0x0F;
+    Tick(4);
+}
+void ADD_HL_rr(byte r1, byte r2) {
+    hex HL = GB.H << 8 | GB.L;
+    hex rr = r1 << 8 | r2;
+    HL += rr;
+    if ((GB.H & 0x0FFF) + (GB.L & 0x0FFF) > 0x0FFF) Set_Bit_N(GB.F,6,1);
+    else Set_Bit_N(GB.F,6,0);
+    if ((uint32_t)GB.H + (uint32_t)GB.L > 0xFFFF) Set_Bit_N(GB.F,5,1);
+    else Set_Bit_N(GB.F,5,0);
+    GB.H = HL >> 8;
+    GB.L = HL & 0x0F;
+    Set_Bit_N(GB.F,6,0);
+    Tick(4);
+}
+void ADD_SP_e() {
+    //TO-DO
+}
+//Rotate, shift and bit operation instructions
+void RLCA() {
+    byte b7 = Get_Bit_N(GB.A,7);
+    GB.A = GB.A << 1;
+    Set_Bit_N(GB.A,0,b7);
+    Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RRCA() {
+    byte b0 = Get_Bit_N(GB.A,0);
+    GB.A = GB.A >> 1;
+    Set_Bit_N(GB.A,7,b0);
+    Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RLA() {
+    byte b7 = Get_Bit_N(GB.A,7);
+    GB.A = GB.A << 1;
+    Set_Bit_N(GB.A,0,Get_Bit_N(GB.F,4));
+    Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RRA() {
+    byte b0 = Get_Bit_N(GB.A,0);
+    GB.A = GB.A >> 1;
+    Set_Bit_N(GB.A,7,Get_Bit_N(GB.F,4));
+    Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RLC(byte *r) {
+    byte b7 = Get_Bit_N(*r,7);
+    *r = *r << 1;
+    Set_Bit_N(*r,0,b7);
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RLC_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b7 = Get_Bit_N(n,7);
+    n = n << 1;
+    Set_Bit_N(n,0,b7);
+    Write(GB.H << 8 | GB.L,n);
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RRC(byte *r) {
+    byte b0 = Get_Bit_N(*r,0);
+    *r = *r >> 1;
+    Set_Bit_N(*r,7,b0);
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RRC_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b0 = Get_Bit_N(n,0);
+    n = n >> 1;
+    Set_Bit_N(n,7,b0);
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void RL_r(byte *r) {
+    byte b7 = Get_Bit_N(*r,7);
+    *r = *r << 1;
+    Set_Bit_N(*r,0,Get_Bit_N(GB.F,4));
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RL_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b0 = Get_Bit_N(n,0);
+    n = n << 1;
+    Set_Bit_N(n,0,Get_Bit_N(GB.F,4));
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void RR_r(byte *r) {
+    byte b0 = Get_Bit_N(*r,0);
+    *r = *r >> 1;
+    Set_Bit_N(*r,7,Get_Bit_N(GB.F,4));
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void RR_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b0 = Get_Bit_N(n,0);
+    n = n >> 1;
+    Set_Bit_N(n,7,Get_Bit_N(GB.F,4));
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void SLA_r(byte *r) {
+    byte b7 = Get_Bit_N(*r,7);
+    *r = *r << 1;
+    Set_Bit_N(*r,0,0);
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,b7);
+}
+void SLA_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b7 = Get_Bit_N(n,7);
+    Set_Bit_N(n,0,0);
+    if (n) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b7) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void SRA_r(byte *r) {
+    byte b0 = Get_Bit_N(*r,0);
+    byte b7 = Get_Bit_N(*r,7);
+    *r = *r >> 1;
+    Set_Bit_N(*r,7,b7);
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void SRA_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b7 = Get_Bit_N(n,7);
+    byte b0 = Get_Bit_N(n,0);
+    Set_Bit_N(n,0,0);
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void SWAP_r(byte *r) {
+    byte L = *r & 0x0F;
+    byte H = *r & 0xF0;
+    hex LH = L << 8 | H;
+    *r = LH;
+    if (LH == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+}
+void SWAP_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte L = n & 0x0F;
+    byte H = n & 0xF0;
+    hex LH = L << 8 | H;
+    n = LH;
+    if (LH == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    Set_Bit_N(GB.F,4,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void SRL_r(byte *r) {
+    byte b0 = Get_Bit_N(*r,0);
+    *r = *r >> 1;
+    Set_Bit_N(*r,7,0);
+    if (*r == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void SRL_HL() {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte b0 = Get_Bit_N(n,0);
+    n = n >> 1;
+    Set_Bit_N(n,7,0);
+    if (n == 0) Set_Bit_N(GB.F,7,1);
+    else Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,0);
+    if (b0) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
+}
+void BIT_b_r(byte b,byte r) {
+    byte bit = Get_Bit_N(r,b);
+    Set_Bit_N(GB.F,7,bit == 0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,1);
+}
+void BIT_b_HL(byte b) {
+    byte n = Read(GB.H << 8 | GB.L);
+    byte bit = Get_Bit_N(n,b);
+    Set_Bit_N(GB.F,7,bit == 0);
+    Set_Bit_N(GB.F,6,0);
+    Set_Bit_N(GB.F,5,1);
+}
+void RES_b_r(byte b, byte *r) {
+    Set_Bit_N(*r,b,0);
+}
+void RES_b_HL(byte b) {
+    byte n = Read(GB.H << 8 | GB.L);
+    Set_Bit_N(n,b,0);
+    Write(GB.H << 8 | GB.L,n);
+}
+void Set_b_r(byte b, byte *r) {
+    Set_Bit_N(*r,b,1);
+}
+void Set_b_HL(byte b) {
+    byte n = Read(GB.H << 8 | GB.L);
+    Set_Bit_N(n,b,1);
+    Write(GB.H << 8 | GB.L,n);
 }
 void Execute() {
     byte opcode = Fetch();
