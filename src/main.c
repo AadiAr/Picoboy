@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
 #include <hardware/spi.h>
-
 #include "ili9341.h"
 
 #define PIN_SDO 12

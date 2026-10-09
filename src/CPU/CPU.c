@@ -1,10 +1,7 @@
 //
 // Created by Aadi on 30/8/2026.
 //
-#include "cpu.h"
-#define To_HEX(p,n) ((p) << 8 | (n))
-#define Set_Bit_N(p, n, st) (((p) & ~(1 << (n))) | (((st) & 1) << (n)))
-#define Get_Bit_N(p, n) (((p) >> n) & 1)
+#include "CPU.h"
 
 cpu GB;
 void Tick(int n) {
@@ -926,6 +923,93 @@ void Set_b_HL(byte b) {
     Set_Bit_N(n,b,1);
     Write(GB.H << 8 | GB.L,n);
 }
+//Control flow instructions
+void JP_nn() {
+    byte n1 = Fetch();
+    byte n2 = Fetch();
+    hex nn = n2 << 8 | n1;
+    GB.pc = nn;
+}
+void JP_HL() {
+    GB.pc = GB.H << 8 | GB.L;
+}
+void JP_cc_nn() {
+    byte n1 = Fetch();
+    byte n2 = Fetch();
+    byte nn = n2 << 8 | n1;
+    if (!Get_Bit_N(GB.F,7)) {
+        GB.pc = nn;
+    }
+}
+void JR_e() {
+    byte e = (signed)Fetch();
+    GB.pc += e;
+}
+void JR_cc_e() {
+    byte e = (signed)Fetch();
+    if (!Get_Bit_N(GB.F,7)) {
+        GB.pc += e;
+    }
+}
+void CALL_nn() {
+    byte n1 = Fetch();
+    byte n2 = Fetch();
+    byte nn = n2 << 8 | n1;
+    GB.sp -= 1;
+    Write(GB.sp,(GB.pc >> 8) & 0x00FF);
+    Write(GB.sp,(GB.pc & 0x00FF));
+    GB.pc = nn;
+}
+void CALL_cc_nn() {
+    byte n1 = Fetch();
+    byte n2 = Fetch();
+    hex nn = n2 << 8 | n1;
+    if (!Get_Bit_N(GB.F,7)) {
+        GB.sp -= 1;
+        Write(GB.sp,(GB.pc >> 8) & 0x00FF);
+        Write(GB.sp,(GB.pc & 0x00FF));
+        //confirm if this is supposed to be if the condition or regardless
+        GB.pc = nn;
+    }
+}
+void RET() {
+    byte n1 = Read(GB.sp);
+    GB.sp++;
+    byte n2 = Read(GB.sp);
+    GB.sp++;
+    GB.pc = To_HEX(n2,n1);
+    Tick(4);
+}
+void RET_cc() {
+    if (!Get_Bit_N(GB.F,7)) {
+        Tick(4);
+        byte n1 = Read(GB.sp);
+        GB.sp++;
+        byte n2 = Read(GB.sp);
+        GB.sp++;
+        GB.pc = To_HEX(n2,n1);
+        Tick(4);
+    }
+}
+void RETI() {
+    byte n1 = Read(GB.sp);
+    GB.sp++;
+    byte n2 = Read(GB.sp);
+    GB.sp++;
+    GB.pc = To_HEX(n2,n1);
+    //IME
+    GB.ie = 1;
+    Tick(4);
+}
+//Recheck origin of n later
+void RST_n(byte n) {
+    GB.sp--;
+    Tick(4);
+    Write(GB.sp,GB.pc >> 8 & 0x00FF);
+    Write(GB.sp,GB.pc & 0x00FF);
+    GB.pc = 0x0000 | n;
+}
+//MISC INSTR
 void Execute() {
     byte opcode = Fetch();
     hex HL = GB.H << 8 | GB.L;

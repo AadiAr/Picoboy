@@ -6,6 +6,9 @@
 #define GB_PICO_CPU_H
 #include <stdio.h>
 #include <inttypes.h>
+#define To_HEX(p,n) ((p) << 8 | (n))
+#define Set_Bit_N(p, n, st) (((p) & ~(1 << (n))) | (((st) & 1) << (n)))
+#define Get_Bit_N(p, n) (((p) >> n) & 1)
 
 typedef uint16_t hex;
 typedef uint8_t byte;
