@@ -125,10 +125,36 @@ void LD_nn_SP() {
     byte n1 = Fetch();
     byte n2 = Fetch();
     hex nn = n2 << 8 | n1;
-    Write(nn,GB.sp);
+    Write(nn,GB.sp & 0x00FF);
+    Write(nn+1,GB.sp >> 8);
 }
 void LD_SP_HL(hex HL) {
     GB.sp = HL;
+    Tick(4);
+}
+void Push_rr(byte r1, byte r2) {
+    GB.sp--;
+    Tick(4);
+    Write(GB.sp, r1);
+    Write(GB.sp - 1, r2);
+}
+void Pop_rr(byte* r1, byte* r2) {
+    *r2 = Read(GB.sp);
+    GB.sp++;
+    *r1 = Read(GB.sp);
+    GB.sp++;
+}
+void LD_HL_spe() {
+    byte e = Fetch();
+    hex result = GB.sp + e;
+    GB.L = result & 0x00FF;
+    GB.H = result >> 8;
+    Set_Bit_N(GB.F,7,0);
+    Set_Bit_N(GB.F,6,0);
+    if ((GB.sp & 0x000F) + (e & 0x0F) > 0x0F ) Set_Bit_N(GB.F,5,1);
+    else Set_Bit_N(GB.F,5,0);
+    if ((GB.sp & 0x00FF) + e > 0xFF) Set_Bit_N(GB.F,4,1);
+    else Set_Bit_N(GB.F,4,0);
 }
 //8 Bit arithematic operations
 void ADD_r(byte r) {
@@ -956,6 +982,7 @@ void CALL_nn() {
     byte n2 = Fetch();
     byte nn = n2 << 8 | n1;
     GB.sp -= 1;
+    Tick(4);
     Write(GB.sp,(GB.pc >> 8) & 0x00FF);
     Write(GB.sp,(GB.pc & 0x00FF));
     GB.pc = nn;
@@ -1006,10 +1033,19 @@ void RST_n(byte n) {
     GB.sp--;
     Tick(4);
     Write(GB.sp,GB.pc >> 8 & 0x00FF);
+    GB.sp--;
     Write(GB.sp,GB.pc & 0x00FF);
     GB.pc = 0x0000 | n;
 }
 //MISC INSTR
+void DI() {
+    GB.ie = 0;
+}
+void EI() {
+    GB.ie = 1;
+}
+void NOP();
+
 void Execute() {
     byte opcode = Fetch();
     hex HL = GB.H << 8 | GB.L;
